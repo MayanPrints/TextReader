@@ -1,1 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voz Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0c10;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: rgba(255,255,255,0.07);
+    --accent-f: #e8a4c8;
+    --accent-m: #7eb8e8;
+    --accent-f-glow: rgba(232,164,200,0.18);
+    --accent-m-glow: rgba(126,184,232,0.18);
+    --text: #f0eef5;
+    --text-dim: rgba(240,238,245,0.45);
+    --active: #e8a4c8;
+    --active-glow: rgba(232,164,200,0.18);
+  }
+  body.male-mode {
+    --active: #7eb8e8;
+    --active-glow: rgba(126,184,232,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-x: hidden;
+  }
+
+  /* Background orbs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.35;
+    pointer-events: none;
+    transition: all 1.2s ease;
+  }
+  body::before {
+    width: 500px; height: 500px;
+    background: var(--accent-f-glow);
+    top: -100px; right: -100px;
+  }
+  body::after {
+    width: 400px; height: 400px;
+    background: var(--accent-m-glow);
+    bottom: -80px; left: -80px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 640px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .logo em {
+    font-style: italic;
+    color: var(--active);
+    transition: color 0.6s;
+  }
+  .tagline {
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Voice selector */
+  .voice-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 6px;
+  }
+  .voice-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 13px;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .voice-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 13px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .voice-btn.female::before { background: var(--accent-f-glow); }
+  .voice-btn.male::before   { background: var(--accent-m-glow); }
+  .voice-btn.active {
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--active), 0 4px 20px var(--active-glow);
+  }
+  .voice-btn.active::before { opacity: 1; }
+  .voice-btn.female.active { color: var(--accent-f); }
+  .voice-btn.male.active   { color: var(--accent-m); }
+  .voice-icon {
+    font-size: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .voice-label {
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.04em;
+  }
+
+  /* Voice select dropdown */
+  .voice-pick-wrap {
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .voice-pick-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .voice-pick {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border 0.2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(240,238,245,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  .voice-pick:focus { border-color: var(--active); }
+  .voice-pick option { background: #1c1c26; }
+
+  /* Text area */
+  .textarea-wrap {
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .text-input {
+    width: 100%;
+    min-height: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.75;
+    outline: none;
+    resize: vertical;
+    transition: border 0.2s;
+  }
+  .text-input::placeholder { color: var(--text-dim); font-style: italic; }
+  .text-input:focus { border-color: var(--active); }
+  .char-count {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+
+  /* Controls */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .control-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .control-group label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .control-group label span {
+    color: var(--active);
+    font-size: 12px;
+    letter-spacing: 0;
+    font-weight: 500;
+    transition: color 0.6s;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 10px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--active);
+    box-shadow: 0 0 8px var(--active-glow);
+    transition: background 0.6s, box-shadow 0.6s;
+    cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--active);
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Play button */
+  .play-btn {
+    width: 100%;
+    padding: 18px;
+    border: none;
+    border-radius: 18px;
+    background: var(--surface);
+    border: 1px solid var(--active);
+    color: var(--active);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .play-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--active-glow);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .play-btn:hover::before { opacity: 1; }
+  .play-btn:hover { box-shadow: 0 0 30px var(--active-glow); transform: translateY(-1px); }
+  .play-btn:active { transform: translateY(0); }
+  .play-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .play-btn.playing {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+  }
+  .play-btn.playing::before { background: rgba(255,107,107,0.12); opacity: 1; }
+  .play-btn span { position: relative; z-index: 1; }
+
+  /* Action row */
+  .action-row {
+    display: flex;
+    gap: 10px;
+  }
+  .action-btn {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .action-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  /* Waveform visualizer */
+  .visualizer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 40px;
+    margin-bottom: 16px;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .visualizer.active { opacity: 1; }
+  .bar {
+    width: 3px;
+    border-radius: 10px;
+    background: var(--active);
+    transition: background 0.6s;
+    animation: none;
+  }
+  .visualizer.active .bar { animation: wave 1.2s ease-in-out infinite; }
+  @keyframes wave {
+    0%, 100% { height: 4px; opacity: 0.4; }
+    50% { height: 28px; opacity: 1; }
+  }
+  .bar:nth-child(1)  { animation-delay: 0s; }
+  .bar:nth-child(2)  { animation-delay: 0.1s; }
+  .bar:nth-child(3)  { animation-delay: 0.2s; }
+  .bar:nth-child(4)  { animation-delay: 0.3s; }
+  .bar:nth-child(5)  { animation-delay: 0.15s; }
+  .bar:nth-child(6)  { animation-delay: 0.05s; }
+  .bar:nth-child(7)  { animation-delay: 0.25s; }
+  .bar:nth-child(8)  { animation-delay: 0.35s; }
+  .bar:nth-child(9)  { animation-delay: 0.1s; }
+  .bar:nth-child(10) { animation-delay: 0.2s; }
+  .bar:nth-child(11) { animation-delay: 0.0s; }
+  .bar:nth-child(12) { animation-delay: 0.3s; }
+
+  /* No-support message */
+  .no-support {
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.3);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #ff9999;
+    text-align: center;
+    display: none;
+  }
+
+  /* ── ELEVENLABS PANEL ── */
+  .el-panel {
+    background: var(--surface);
+    border: 1px solid rgba(232,164,200,0.25);
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .el-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .el-title {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .el-badge {
+    font-size: 9px;
+    background: rgba(232,164,200,0.15);
+    color: var(--accent-f);
+    border: 1px solid rgba(232,164,200,0.3);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .el-voices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .el-voice-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .el-voice-card:hover { border-color: rgba(255,255,255,0.2); }
+  .el-voice-card.selected {
+    border-color: var(--active);
+    background: var(--active-glow);
+  }
+  .el-voice-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .el-voice-desc {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+  }
+  .el-voice-card.selected .el-voice-name { color: var(--active); }
+  .dl-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(232,164,200,0.2), rgba(126,184,232,0.2));
+    border: 1px solid rgba(232,164,200,0.35);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .dl-btn:hover { background: linear-gradient(135deg, rgba(232,164,200,0.32), rgba(126,184,232,0.32)); box-shadow: 0 0 24px rgba(232,164,200,0.15); transform: translateY(-1px); }
+  .dl-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .dl-btn span { position: relative; z-index: 1; }
+  .el-status {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 10px;
+    min-height: 16px;
+    letter-spacing: 0.04em;
+  }
+  .el-status.err { color: #ff8a8a; }
+  .el-status.ok  { color: #7de8a0; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 10px 20px;
+    font-size: 12px;
+    color: var(--text-dim);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media(max-width: 480px) {
+    .logo { font-size: 34px; }
+    .controls { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">Voz <em>Studio</em></div>
+    <div class="tagline">Texto · Voz · Emoción</div>
+  </div>
+
+  <!-- Visualizer -->
+  <div class="visualizer" id="visualizer">
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  </div>
+
+  <!-- Voice selector -->
+  <div class="voice-selector">
+    <button class="voice-btn female active" id="btn-female" onclick="setGender('female')">
+      <span class="voice-icon">♀</span>
+      <span class="voice-label">Femenina</span>
+    </button>
+    <button class="voice-btn male" id="btn-male" onclick="setGender('male')">
+      <span class="voice-icon">♂</span>
+      <span class="voice-label">Masculina</span>
+    </button>
+  </div>
+
+  <!-- Voice pick -->
+  <div class="voice-pick-wrap">
+    <span class="voice-pick-label">Voz disponible</span>
+    <select class="voice-pick" id="voice-select"></select>
+  </div>
+
+  <!-- Text area -->
+  <div class="textarea-wrap">
+    <textarea class="text-input" id="text-input"
+      placeholder="Escribe o pega tu texto aquí..."
+      oninput="updateCount()"
+      onkeydown="if(event.ctrlKey&&event.key==='Enter')speak()"></textarea>
+    <div class="char-count" id="char-count">0</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="control-group">
+      <label>Velocidad <span id="rate-val">1.0×</span></label>
+      <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1.0"
+        oninput="document.getElementById('rate-val').textContent=parseFloat(this.value).toFixed(1)+'×'">
+    </div>
+    <div class="control-group">
+      <label>Tono <span id="pitch-val">1.0</span></label>
+      <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1.0"
+        oninput="document.getElementById('pitch-val').textContent=parseFloat(this.value).toFixed(1)">
+    </div>
+  </div>
+
+  <!-- Play button -->
+  <button class="play-btn" id="play-btn" onclick="toggleSpeak()">
+    <span id="play-icon">▶</span>
+    <span id="play-label">Leer en voz alta</span>
+  </button>
+
+  <!-- ElevenLabs panel -->
+  <div class="el-panel">
+    <div class="el-header">
+      <div class="el-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        ElevenLabs · Voces Premium
+      </div>
+      <span class="el-badge">IA</span>
+    </div>
+    <div class="el-voices" id="el-voices-grid">
+      <!-- Se llena dinámicamente -->
+    </div>
+    <button class="dl-btn" id="dl-btn" onclick="generateAndDownload()">
+      <span>⬇</span><span id="dl-label">Generar y descargar MP3</span>
+    </button>
+    <div class="el-status" id="el-status"></div>
+    <div style="margin-top:10px;font-size:10px;color:rgba(240,238,245,0.25);text-align:center;letter-spacing:0.04em">
+      ⓘ Requiere conexión a internet · Funciona mejor desde GitHub Pages
+    </div>
+  </div>
+
+  <!-- Action row -->
+  <div class="action-row">
+    <button class="action-btn" onclick="clearText()">✕ Limpiar</button>
+    <button class="action-btn" onclick="copyText()">⧉ Copiar</button>
+    <button class="action-btn" onclick="pasteText()">⇣ Pegar</button>
+  </div>
+
+  <!-- No support -->
+  <div class="no-support" id="no-support">
+    Tu navegador no soporta síntesis de voz. Prueba con Chrome, Edge o Safari.
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const synth = window.speechSynthesis;
+  let voices = [];
+  let currentGender = 'female';
+  let utterance = null;
+  let isPlaying = false;
+
+  // ── Cargar voces ────────────────────────────────
+  function loadVoices(){
+    voices = synth.getVoices();
+    populateVoices();
+  }
+
+  function populateVoices(){
+    const sel = document.getElementById('voice-select');
+    const filtered = getVoicesForGender(currentGender);
+    sel.innerHTML = '';
+    if(filtered.length === 0){
+      sel.innerHTML = '<option value="">— No hay voces disponibles —</option>';
+      return;
+    }
+    filtered.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      // Mostrar nombre limpio + idioma
+      const lang = v.lang ? ` (${v.lang})` : '';
+      opt.textContent = v.name + lang;
+      // Priorizar voces en español
+      if(v.lang && v.lang.startsWith('es')) opt.textContent = '⭐ ' + opt.textContent;
+      sel.appendChild(opt);
+    });
+    // Seleccionar la primera en español si existe
+    const espIdx = filtered.findIndex(v => v.lang && v.lang.startsWith('es'));
+    if(espIdx >= 0) sel.value = espIdx;
+  }
+
+  function getVoicesForGender(gender){
+    // Palabras clave para detectar género
+    const femaleKw = ['female','mujer','woman','femenin','lucia','sofia','laura','maria','ana','elena','sara','natalia','paulina','daniela','valeria','jessica','karen','andrea','alejandra','rosa'];
+    const maleKw   = ['male','hombre','man','mascul','jorge','carlos','miguel','juan','pablo','andres','antonio','diego','manuel','pedro','luis','roberto','alex','marcos','sergio'];
+    return voices.filter(v => {
+      const n = v.name.toLowerCase();
+      if(gender === 'female') return femaleKw.some(k => n.includes(k));
+      else return maleKw.some(k => n.includes(k));
+    });
+  }
+
+  // Si getVoicesForGender devuelve vacío, mostrar todas las voces
+  function getVoicesFiltered(gender){
+    const filtered = getVoicesForGender(gender);
+    return filtered.length > 0 ? filtered : voices;
+  }
+
+  // ── Género ──────────────────────────────────────
+  function setGender(g){
+    currentGender = g;
+    document.body.className = g === 'male' ? 'male-mode' : '';
+    document.getElementById('btn-female').classList.toggle('active', g==='female');
+    document.getElementById('btn-male').classList.toggle('active', g==='male');
+    const vFiltered = getVoicesFiltered(g);
+    const sel = document.getElementById('voice-select');
+    sel.innerHTML = '';
+    vFiltered.forEach((v, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      const lang = v.lang ? ` (${v.lang})` : '';
+      opt.textContent = v.name + lang;
+      if(v.lang && v.lang.startsWith('es')) opt.textContent = '⭐ ' + opt.textContent;
+      sel.appendChild(opt);
+    });
+    const espIdx = vFiltered.findIndex(v => v.lang && v.lang.startsWith('es'));
+    if(espIdx >= 0) sel.value = espIdx;
+    if(isPlaying){ stopSpeak(); }
+    renderElVoices();
+  }
+
+ // ── Hablar ──────────────────────────────────────
+  function toggleSpeak(){
+    if(isPlaying){ stopSpeak(); return; }
+    speak();
+  }
+
+  let _vizTimer = null;
+
+  function speak(){
+    if(!synth){ document.getElementById('no-support').style.display='block'; return; }
+    const text = document.getElementById('text-input').value.trim();
+    if(!text){ showToast('Escribe o pega un texto primero'); return; }
+
+    synth.cancel();
+    clearTimeout(_vizTimer);
+
+    const vFiltered = getVoicesFiltered(currentGender);
+    const selIdx = parseInt(document.getElementById('voice-select').value) || 0;
+    const selectedVoice = vFiltered[selIdx] || null;
+    const rate = parseFloat(document.getElementById('rate').value);
+
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice = selectedVoice;
+    utterance.rate  = rate;
+    utterance.pitch = parseFloat(document.getElementById('pitch').value);
+    utterance.lang  = selectedVoice?.lang || 'es-ES';
+
+    // Activar visualizador ANTES de hablar — no depender de eventos
+    setPlaying();
+
+    // Estimar duración: ~14 palabras/seg a rate 1.0, ajustado por rate
+    const words = text.trim().split(/\s+/).length;
+    const estimatedMs = Math.max(1500, (words / (14 * rate)) * 1000);
+    _vizTimer = setTimeout(() => setIdle(), estimatedMs + 500);
+
+    // onend/onerror detienen antes si el browser sí los dispara
+    utterance.onend = utterance.onerror = () => {
+      clearTimeout(_vizTimer);
+      setIdle();
+    };
+
+    // iOS/Android: necesita un pequeño delay antes de speak()
+    setTimeout(() => synth.speak(utterance), 50);
+  }
+
+  function setPlaying(){
+    isPlaying = true;
+    document.getElementById('play-btn').classList.add('playing');
+    document.getElementById('play-icon').textContent = '■';
+    document.getElementById('play-label').textContent = 'Detener';
+    document.getElementById('visualizer').classList.add('active');
+  }
+
+  function setIdle(){
+    isPlaying = false;
+    document.getElementById('play-btn').classList.remove('playing');
+    document.getElementById('play-icon').textContent = '▶';
+    document.getElementById('play-label').textContent = 'Leer en voz alta';
+    document.getElementById('visualizer').classList.remove('active');
+  }
+
+  function stopSpeak(){
+    synth.cancel();
+    clearTimeout(_vizTimer);
+    setIdle();
+  }
+
+  // ── Utilidades ──────────────────────────────────
+  function updateCount(){
+    const n = document.getElementById('text-input').value.length;
+    document.getElementById('char-count').textContent = n.toLocaleString();
+  }
+
+  function clearText(){
+    stopSpeak();
+    document.getElementById('text-input').value = '';
+    updateCount();
+    showToast('Texto limpiado');
+  }
+
+  function copyText(){
+    const t = document.getElementById('text-input').value;
+    if(!t){ showToast('No hay texto para copiar'); return; }
+    navigator.clipboard.writeText(t).then(()=>showToast('Texto copiado ✓'));
+  }
+
+  async function pasteText(){
+    try {
+      const t = await navigator.clipboard.readText();
+      document.getElementById('text-input').value = t;
+      updateCount();
+      showToast('Texto pegado ✓');
+    } catch(e){
+      showToast('Usa Ctrl+V para pegar');
+    }
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  // ── ElevenLabs ──────────────────────────────────
+  const _k = atob('c2tfYmI5YzYyNGMxOTdkYWI3MmFlZDFlMTkzNTc0NWZkN2E2YTA1OTM1MmFiY2M0YjQz');
+
+  // Catálogo de voces premium — mezcladas femeninas y masculinas
+  const EL_VOICES = [
+    // Femeninas
+    { id:'EXAVITQu4vr4xnSDxMaL', name:'Sarah',   desc:'Suave · Natural',    gender:'female' },
+    { id:'XrExE9yKIg1WjnnlVkGX', name:'Matilda',  desc:'Cálida · Amigable',  gender:'female' },
+    { id:'pFZP5JQG7iQjIQuC4Bku', name:'Lily',     desc:'Serena · Elegante',  gender:'female' },
+    { id:'jsCqWAovK2LkecY7zXl4', name:'Freya',    desc:'Expresiva · Clara',  gender:'female' },
+    // Masculinas
+    { id:'TxGEqnHWrfWFTfGW9XjX', name:'Josh',     desc:'Profunda · Serena',  gender:'male' },
+    { id:'VR6AewLTigWG4xSOukaG', name:'Arnold',   desc:'Fuerte · Confiable', gender:'male' },
+    { id:'pqHfZKP75CvOlD17v9tz', name:'Michael',  desc:'Refinada · Cálida',  gender:'male' },
+    { id:'yoZ06aMxZJJ28mfd3POQ', name:'Sam',      desc:'Dinámica · Joven',   gender:'male' },
+  ];
+
+  let selectedElVoice = EL_VOICES[0].id;
+
+  function renderElVoices(){
+    const grid = document.getElementById('el-voices-grid');
+    const filtered = EL_VOICES.filter(v => v.gender === currentGender);
+    grid.innerHTML = filtered.map(v => `
+      <div class="el-voice-card ${selectedElVoice===v.id?'selected':''}"
+           onclick="selectElVoice('${v.id}')">
+        <div class="el-voice-name">${v.name}</div>
+        <div class="el-voice-desc">${v.desc}</div>
+      </div>`).join('');
+    // Si la voz seleccionada no está en el género actual, seleccionar la primera
+    if(!filtered.find(v=>v.id===selectedElVoice) && filtered.length>0){
+      selectedElVoice = filtered[0].id;
+      renderElVoices();
+    }
+  }
+
+  function selectElVoice(id){
+    selectedElVoice = id;
+    renderElVoices();
+  }
+
+  async function generateAndDownload(){
+    const text = document.getElementById('text-input').value.trim();
+    if(!text){ showToast('Escribe o pega un texto primero'); return; }
+    if(text.length > 5000){ showToast('Máximo 5000 caracteres para ElevenLabs'); return; }
+
+    const btn   = document.getElementById('dl-btn');
+    const lbl   = document.getElementById('dl-label');
+    const status= document.getElementById('el-status');
+
+    btn.disabled = true;
+    lbl.textContent = 'Generando audio…';
+    status.className = 'el-status';
+    status.textContent = '⏳ Conectando con ElevenLabs…';
+
+    try{
+      const resp = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${selectedElVoice}`,
+        {
+          method: 'POST',
+          headers: {
+            'xi-api-key': _k,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg'
+          },
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.5, similarity_boost: 0.85, style: 0.2 }
+          })
+        }
+      );
+
+      if(!resp.ok){
+        const err = await resp.json().catch(()=>({}));
+        throw new Error(err.detail?.message || `Error ${resp.status}`);
+      }
+
+      status.textContent = '⬇ Preparando descarga…';
+      const blob = await resp.blob();
+      const url  = URL.createObjectURL(blob);
+      const voiceName = EL_VOICES.find(v=>v.id===selectedElVoice)?.name || 'audio';
+
+      // Reproducir en el navegador con visualizador
+      const audio = new Audio(url);
+      setPlaying();
+      audio.onended = () => { setIdle(); URL.revokeObjectURL(url); };
+      audio.onerror = () => { setIdle(); };
+      audio.play();
+
+      // También descargar el MP3
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `voz-studio-${voiceName.toLowerCase()}-${Date.now()}.mp3`;
+      // Pequeño delay para que la descarga no interrumpa el audio
+      setTimeout(() => a.click(), 300);
+
+      status.className = 'el-status ok';
+      status.textContent = `✓ Reproduciendo con ${voiceName} · MP3 descargado`;
+      setTimeout(()=>status.textContent='', 5000);
+
+    } catch(e){
+      status.className = 'el-status err';
+      status.textContent = '✕ ' + e.message;
+    } finally{
+      btn.disabled = false;
+      lbl.textContent = 'Generar y descargar MP3';
+    }
+  }
+
+  // ── Init ────────────────────────────────────────
+  if(!window.speechSynthesis){
+    document.getElementById('no-support').style.display = 'block';
+    document.getElementById('play-btn').disabled = true;
+  } else {
+    loadVoices();
+    if(synth.onvoiceschanged !== undefined){
+      synth.onvoiceschanged = loadVoices;
+    }
+    // Chrome necesita un delay para cargar voces
+    setTimeout(loadVoices, 300);
+  }
+  // Render inicial de voces ElevenLabs
+  renderElVoices();
+</script>
+</body>
+</html>
 
